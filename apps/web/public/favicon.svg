@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="ttGradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CDB4DB" />
+      <stop offset="0.5" stop-color="#FFAFCC" />
+      <stop offset="1" stop-color="#A2D2FF" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#ttGradient)" />
+  <text
+    x="32"
+    y="37"
+    text-anchor="middle"
+    font-family="'Plus Jakarta Sans', Arial, sans-serif"
+    font-size="22"
+    font-weight="800"
+    letter-spacing="2"
+    fill="#FFFFFF"
+  >
+    TT
+  </text>
+</svg>
