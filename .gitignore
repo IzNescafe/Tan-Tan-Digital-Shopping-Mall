@@ -1,0 +1,20 @@
+# secrets
+apps/api/.env
+apps/web/.env
+apps/web/.env.local
+.env
+.env.local
+.env.*.local
+
+# dependencies
+apps/api/node_modules/
+apps/web/node_modules/
+
+# build output
+apps/web/dist/
+
+# local data / temp files
+apps/api/data/*.json
+docs/tmp/
+*.log
+npm-debug.log*
