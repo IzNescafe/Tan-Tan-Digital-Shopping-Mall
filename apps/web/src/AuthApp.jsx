@@ -463,7 +463,7 @@ function AuthApp() {
         type: "success",
         text: `Welcome back, ${payload.user.name}.`,
       });
-      navigateTo(payload.user.role === "customer" ? "home" : "dashboard");
+      navigateTo("dashboard");
     } catch (error) {
       setNeedsRetailerCode(Boolean(error.payload?.codeRequired) || loginForm.code.length > 0);
       setStatusMessage({

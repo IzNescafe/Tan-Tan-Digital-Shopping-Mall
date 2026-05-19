@@ -9,11 +9,11 @@
   --color-surface: rgba(255, 255, 255, 0.72);
   --color-surface-strong: rgba(255, 255, 255, 0.88);
   --color-border: rgba(92, 73, 116, 0.12);
-  --shadow-soft: 0 24px 70px rgba(95, 74, 129, 0.12);
-  --radius-xl: 32px;
-  --radius-lg: 24px;
-  --radius-md: 18px;
-  --max-width: 1180px;
+  --shadow-soft: 0 14px 34px rgba(95, 74, 129, 0.1);
+  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --max-width: 1120px;
   font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--color-ink);
   background:
@@ -94,6 +94,7 @@ a {
 }
 
 .site-header {
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -480,6 +481,10 @@ a {
     justify-content: flex-start;
   }
 
+  .nav-hover-panel.is-static {
+    min-width: 0;
+  }
+
   .header-nav-button {
     min-height: 46px;
     padding: 0 18px;
@@ -487,5 +492,130 @@ a {
 
   .hero-copy h2 {
     font-size: clamp(2.2rem, 14vw, 3.4rem);
+  }
+}
+
+/* Compact system pass: keep the whole site denser and consistent. */
+.app-shell {
+  padding: 18px;
+}
+
+.site-header,
+.hero-panel,
+.collection-section,
+.workflow-section,
+.launch-banner {
+  margin-bottom: 18px;
+}
+
+.site-header {
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.brand-lockup {
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.brand-lockup h1 {
+  font-size: clamp(1.05rem, 1vw + 0.85rem, 1.45rem);
+}
+
+.eyebrow,
+.preview-label,
+.collection-kicker {
+  margin-bottom: 0.28rem;
+  font-size: 0.66rem;
+}
+
+.nav-hover-panel {
+  gap: 8px;
+  padding: 4px;
+}
+
+.header-nav-button,
+.nav-cta,
+.primary-button,
+.secondary-button {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+}
+
+.hero-panel {
+  gap: 18px;
+  padding: 22px;
+}
+
+.hero-copy h2 {
+  font-size: clamp(2rem, 3.6vw, 3.8rem);
+}
+
+.hero-text,
+.launch-banner p,
+.collection-card p,
+.workflow-card p,
+.preview-card li {
+  line-height: 1.5;
+}
+
+.hero-actions {
+  gap: 10px;
+  margin: 18px 0 20px;
+}
+
+.stats-grid,
+.collection-grid,
+.workflow-grid {
+  gap: 12px;
+}
+
+.stat-card,
+.collection-card,
+.workflow-card,
+.preview-accent,
+.preview-note {
+  padding: 16px;
+}
+
+.preview-main,
+.launch-banner {
+  padding: 18px;
+}
+
+.section-heading {
+  margin-bottom: 14px;
+}
+
+.section-heading h2 {
+  font-size: clamp(1.55rem, 1.6vw + 0.9rem, 2.4rem);
+}
+
+.workflow-step {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .site-header,
+  .hero-panel,
+  .launch-banner {
+    padding: 14px;
+  }
+
+  .header-nav-button {
+    min-height: 38px;
+    padding: 0 14px;
   }
 }

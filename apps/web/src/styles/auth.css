@@ -641,8 +641,10 @@
 }
 
 .retailer-upload-form {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 14px;
+  grid-template-columns: minmax(0, 625px);
+  gap: 14px;
+  width: 100%;
+  margin-top: 18px;
 }
 
 .retailer-upload-textarea,
@@ -656,18 +658,52 @@
 
 .upload-field {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   color: var(--color-muted);
-  font-size: 0.84rem;
+  font-size: 0.96rem;
   font-weight: 700;
 }
 
-.upload-field input {
-  min-height: 48px;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border-strong);
-  background: rgba(255, 255, 255, 0.82);
+.retailer-upload-form .upload-field {
+  grid-column: 1;
+}
+
+.upload-field input,
+.upload-field textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(92, 73, 116, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  outline: 0;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.upload-field textarea {
+  min-height: 128px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  resize: vertical;
+}
+
+.upload-field input::placeholder,
+.upload-field textarea::placeholder {
+  color: rgba(111, 100, 129, 0.72);
+}
+
+.upload-field input:focus,
+.upload-field textarea:focus {
+  border-color: #1f1b24;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 0 0 1px #1f1b24;
 }
 
 .retailer-product-grid {
@@ -1203,6 +1239,28 @@
   -webkit-backdrop-filter: none;
 }
 
+body.chat-hub-expanded .site-header {
+  display: none;
+}
+
+body.chat-hub-expanded .app-shell {
+  overflow: visible;
+}
+
+body.chat-hub-expanded .chat-hub-panel.is-expanded {
+  position: fixed;
+  inset: 12px;
+  width: auto;
+  max-width: none;
+  height: auto;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  z-index: 120;
+}
+
+body.chat-hub-expanded .chat-launcher-button {
+  display: none;
+}
+
 .chat-hub-sidebar {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -1540,6 +1598,12 @@
     border-radius: 24px;
   }
 
+  body.chat-hub-expanded .chat-hub-panel.is-expanded {
+    inset: 12px;
+    grid-template-columns: 1fr;
+    grid-template-rows: 200px minmax(0, 1fr);
+  }
+
   .chat-hub-sidebar {
     border-right: 0;
     border-bottom: 1px solid rgba(160, 150, 193, 0.18);
@@ -1729,7 +1793,7 @@
   .retailer-summary-grid,
   .retailer-request-grid,
   .retailer-upload-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 625px);
   }
 
   .order-list {
@@ -3007,5 +3071,321 @@
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+}
+
+/* Compact system pass: align dashboard, auth, marketplace, and post density. */
+.dashboard-section {
+  margin-bottom: 18px;
+  padding: 0 18px;
+}
+
+.status-banner {
+  margin-top: 14px;
+  padding: 10px 12px;
+}
+
+.tab-row,
+.auth-card,
+.customer-shell,
+.retailer-post-side,
+.approval-board,
+.admin-review-sections,
+.catalog-stack {
+  gap: 10px;
+}
+
+.marketing-hero,
+.auth-page-layout,
+.retailer-post-layout {
+  gap: 14px;
+}
+
+.marketing-panel,
+.home-login-panel,
+.customer-section,
+.deal-card,
+.order-card,
+.chat-card,
+.brand-card,
+.retailer-post-card,
+.request-history-card,
+.approval-card,
+.admin-review-group,
+.admin-queue-card,
+.login-panel,
+.role-card,
+.profile-account-card {
+  padding: 14px;
+}
+
+.customer-market-shell,
+.retailer-dashboard-shell {
+  gap: 14px;
+}
+
+.customer-market-shell .customer-section,
+.retailer-dashboard-shell .customer-section {
+  padding: 14px;
+}
+
+.customer-section-heading,
+.order-topline,
+.catalog-heading,
+.profile-card-heading {
+  gap: 10px;
+}
+
+.customer-section h3,
+.order-card h4,
+.retailer-post-card-head h4,
+.post-image-placeholder strong,
+.catalog-heading h4 {
+  font-size: 1rem;
+}
+
+.deal-grid {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.featured-deal-grid,
+.retailer-product-grid {
+  margin-top: 12px;
+}
+
+.brand-grid,
+.request-history,
+.retailer-summary-grid,
+.retailer-request-grid {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.deal-card h3 {
+  font-size: 0.95rem;
+}
+
+.deal-card-body {
+  gap: 1px;
+}
+
+.deal-image-wrap {
+  margin: -14px -14px 10px;
+}
+
+.deal-actions,
+.chat-actions,
+.camera-tools,
+.orders-dropdown-actions,
+.home-login-actions {
+  gap: 8px;
+}
+
+.deal-actions {
+  margin-top: 10px;
+}
+
+.deal-meta,
+.deal-proof,
+.order-card p,
+.chat-card p,
+.request-history-card p,
+.camera-note,
+.brand-item-row p {
+  line-height: 1.38;
+  font-size: 0.8rem;
+}
+
+.price-row {
+  margin-top: 0.42rem;
+}
+
+.filter-chip,
+.deal-brand,
+.status-pill,
+.discount-badge,
+.post-studio-pill,
+.profile-meta-pill {
+  min-height: 26px;
+  padding: 0 9px;
+  font-size: 0.72rem;
+}
+
+.market-tools,
+.search-input {
+  width: min(100%, 460px);
+}
+
+.inline-input,
+.field input,
+.upload-field input,
+.profile-account-input {
+  min-height: 44px;
+  border-radius: 14px;
+}
+
+.field input,
+.upload-field input,
+.upload-field textarea {
+  font-size: 0.94rem;
+}
+
+.upload-field {
+  gap: 7px;
+  font-size: 0.9rem;
+}
+
+.retailer-upload-form {
+  grid-template-columns: minmax(0, 560px);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.upload-field input {
+  padding: 0 14px;
+}
+
+.upload-field textarea,
+.dashboard-textarea {
+  min-height: 104px;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.post-studio-banner {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.post-image-placeholder,
+.post-preview-empty {
+  min-height: 180px;
+  padding: 16px;
+}
+
+.camera-preview {
+  max-width: 460px;
+}
+
+.image-cropper-panel {
+  gap: 10px;
+  padding: 12px;
+}
+
+.auth-page-layout {
+  padding: 18px;
+}
+
+.auth-page-layout .hero-copy,
+.login-panel,
+.role-grid.compact-role-grid {
+  gap: 10px;
+}
+
+.auth-page-layout .hero-copy h2 {
+  font-size: clamp(2.1rem, 3.6vw, 3.8rem);
+}
+
+.auth-page-layout .hero-text {
+  line-height: 1.5;
+}
+
+.login-panel .auth-card {
+  gap: 12px;
+}
+
+.field {
+  gap: 6px;
+}
+
+.role-grid.compact-role-grid {
+  margin-top: 0;
+}
+
+.role-card h3 {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.admin-queue-card strong {
+  font-size: 1.2rem;
+}
+
+.profile-settings-shell {
+  border-radius: 22px;
+}
+
+.profile-settings-main {
+  padding: 12px 16px 16px;
+}
+
+.profile-settings-sidebar,
+.profile-account-row,
+.profile-upload-row {
+  padding: 12px;
+}
+
+.profile-hero-card,
+.profile-account-card,
+.profile-upload-row,
+.profile-account-row {
+  border-radius: 16px;
+}
+
+.profile-hero-banner {
+  height: 58px;
+}
+
+.profile-hero-content {
+  padding: 0 14px 12px;
+}
+
+.profile-avatar-large {
+  width: 48px;
+  height: 48px;
+}
+
+.profile-avatar-xl {
+  width: 64px;
+  height: 64px;
+}
+
+@media (max-width: 1080px) {
+  .dashboard-section {
+    padding: 0 16px;
+  }
+
+  .retailer-upload-form {
+    grid-template-columns: minmax(0, 560px);
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-section {
+    padding: 0 8px;
+  }
+
+  .auth-page-layout,
+  .marketing-panel,
+  .home-login-panel,
+  .customer-section,
+  .deal-card,
+  .order-card,
+  .chat-card,
+  .brand-card,
+  .retailer-post-card,
+  .request-history-card,
+  .approval-card,
+  .admin-review-group,
+  .admin-queue-card,
+  .login-panel,
+  .role-card,
+  .profile-account-card {
+    padding: 12px;
+  }
+
+  .retailer-upload-form {
+    grid-template-columns: 1fr;
   }
 }

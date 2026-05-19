@@ -100,10 +100,9 @@ This is the old version flow that screenshots confirmed:
    - waits for admin approval
    - after approval, verification code is emailed
 6. Existing accounts already live in MongoDB and should continue to work.
-7. Customer post-login flow:
-   - returns to marketplace home / shopping experience
-8. Retailer / Admin post-login flow:
-   - opens their related dashboard
+7. Post-login flow:
+   - customer, retailer, and admin accounts all go straight to `/dashboard`
+   - `DashboardPage.jsx` chooses the correct customer / retailer / admin view from `session.role`
 
 ## 6. Important UI files
 
@@ -188,7 +187,85 @@ If something breaks again:
    - retailer dashboard
    - admin dashboard
 
-## 9. GitHub publish checklist
+## 9. Recent fixes to preserve
+
+### Login goes straight to the related dashboard
+
+- File:
+  - `apps/web/src/AuthApp.jsx`
+- Expected behavior:
+  - after `/auth/login` succeeds, call `navigateTo("dashboard")`
+  - do not send customers back to `home`
+- Why:
+  - `DashboardPage.jsx` already renders the correct dashboard by `session.role`
+
+### Header / Orders dropdown overlap fix
+
+- File:
+  - `apps/web/src/styles/theme.css`
+- Expected CSS:
+  - `.site-header` should stay above dashboard content with `z-index: 20`
+  - inside `@media (max-width: 640px)`, `.nav-hover-panel.is-static` should use `min-width: 0`
+- Why:
+  - prevents the Orders dropdown from being painted under dashboard filters/cards
+  - prevents narrow-screen header buttons such as `Logout` from clipping off-screen
+
+### Retailer post form format fix
+
+- File:
+  - `apps/web/src/styles/auth.css`
+- Expected CSS:
+  - `.upload-field input, .upload-field textarea` should both have the app field style
+  - form fields should be a single-column stack about `560px` wide inside the product details card
+  - keep that same single-column width through the `max-width: 1080px` breakpoint
+  - inputs should be compact rounded boxes (`min-height: 44px`, `border-radius: 14px`) with bold text
+  - focused fields should use a clean dark outline instead of the browser default black rectangle
+  - include width, padding, rounded border, themed background, font, placeholder color, and focus state
+  - do not leave the post form fields as browser-default inputs
+- Why:
+  - `RetailerPostsPage.jsx` uses `search-input` on post inputs, but `search-input` only controls width
+  - textarea needs its own matching `.upload-field textarea` styling
+
+### Compact system pass
+
+- Files:
+  - `apps/web/src/styles/theme.css`
+  - `apps/web/src/styles/auth.css`
+- Expected CSS:
+  - use a denser shared shape across the website: smaller radii, lighter shadow, tighter page/header/card spacing
+  - keep buttons around `40px` high on desktop and dashboard inputs around `44px`
+  - keep product cards, dashboard sections, auth panels, retailer post cards, admin cards, and profile cards using similar compact padding
+  - preserve important behavior from earlier fixes: header stays above dashboard content, post form stays single-column, and login routes to `/dashboard`
+- Why:
+  - prevents each page from feeling like a different design system
+  - keeps marketplace pages easier to scan on laptop and mobile screens
+
+### Expanded chat / navbar collapse fix
+
+- File:
+  - `apps/web/src/styles/auth.css`
+- Expected CSS:
+  - when `body.chat-hub-expanded` is active, hide `.site-header`
+  - keep `.chat-hub-panel.is-expanded` as a fixed overlay with `inset: 12px`, `width: auto`, and high `z-index`
+  - set `body.chat-hub-expanded .app-shell { overflow: visible; }`
+  - hide `.chat-launcher-button` while expanded
+  - keep mobile expanded chat as one-column with the conversation list stacked above the chat body
+- Why:
+  - expanded chat should not squeeze or collapse the navbar
+  - chat full-screen mode should be isolated from normal page/header layout
+
+### Validation after each UI fix
+
+Run:
+
+```powershell
+cd "C:\Users\user\OneDrive\Documents\Tan Tan Digital Shopping Mall\apps\web"
+npm run build
+```
+
+The latest confirmed fixes above all passed Vite build.
+
+## 10. GitHub publish checklist
 
 Before pushing:
 
@@ -221,7 +298,7 @@ git commit -m "docs: add marketplace recovery memo and repo safety ignores"
 git push origin main
 ```
 
-## 10. Purpose of this memo
+## 11. Purpose of this memo
 
 This file is the shortest path to catch up again after:
 
