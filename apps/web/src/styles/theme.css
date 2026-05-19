@@ -97,8 +97,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 18px 24px;
+  gap: 22px;
+  padding: 22px 24px 22px 28px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.56);
@@ -111,6 +111,12 @@ a {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.brand-lockup > div {
+  min-width: 0;
 }
 
 .brand-mark {
@@ -140,7 +146,7 @@ a {
 }
 
 .brand-lockup h1 {
-  max-width: 420px;
+  max-width: 470px;
   font-size: clamp(1.2rem, 1.4vw + 0.9rem, 1.8rem);
 }
 
@@ -165,6 +171,49 @@ a {
 .top-nav a {
   color: var(--color-muted);
   font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.nav-hover-panel {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46);
+}
+
+.nav-hover-panel.is-static {
+  min-width: fit-content;
+}
+
+.header-nav-button {
+  min-height: 50px;
+  padding: 0 24px;
+}
+
+.nav-hover-panel .secondary-button.header-nav-button {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(92, 73, 116, 0.14);
+  box-shadow: none;
+}
+
+.nav-hover-panel .header-nav-button.is-active {
+  background: linear-gradient(135deg, var(--color-carnation), var(--color-sky));
+  border-color: transparent;
+  color: var(--color-ink);
+  box-shadow: 0 12px 24px rgba(162, 210, 255, 0.24);
 }
 
 .nav-cta,
@@ -400,6 +449,15 @@ a {
   .top-nav {
     justify-content: flex-start;
   }
+
+  .header-actions {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .nav-hover-panel {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -415,6 +473,16 @@ a {
 
   .brand-lockup {
     align-items: flex-start;
+  }
+
+  .nav-hover-panel {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-nav-button {
+    min-height: 46px;
+    padding: 0 18px;
   }
 
   .hero-copy h2 {
