@@ -1,5 +1,6 @@
-function RetailerHistoryPage({ retailerDashboard, onBack }) {
+function RetailerHistoryPage({ retailerDashboard, onUpdateRetailerProductStatus, onBack, isSubmitting }) {
   const soldProducts = retailerDashboard?.soldProducts || [];
+  const inStockProducts = retailerDashboard?.inStockProducts || [];
   const handleClosePage = () => {
     if (typeof onBack === "function") {
       onBack();
@@ -23,7 +24,10 @@ function RetailerHistoryPage({ retailerDashboard, onBack }) {
                 <p className="preview-label">Sales history</p>
                 <h3>Sold posts memory</h3>
               </div>
-              <span className="deal-brand">History</span>
+              <div className="post-studio-banner history-summary-pills">
+                <span className="deal-brand">{soldProducts.length} sold</span>
+                <span className="deal-brand">{inStockProducts.length} in stock</span>
+              </div>
             </div>
 
             <div className="deal-grid retailer-product-grid">
@@ -44,6 +48,16 @@ function RetailerHistoryPage({ retailerDashboard, onBack }) {
                       <div className="price-row">
                         <strong>{product.priceMMK}</strong>
                         <span>{product.originalPriceMMK}</span>
+                      </div>
+                      <div className="deal-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onUpdateRetailerProductStatus?.(product.id, "active")}
+                        >
+                          Restore to stock
+                        </button>
                       </div>
                     </div>
                   </article>

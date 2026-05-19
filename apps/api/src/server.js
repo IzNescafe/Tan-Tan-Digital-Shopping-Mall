@@ -1234,6 +1234,10 @@ app.patch(
     }
 
     const status = asString(req.body?.status || product.status || "active");
+    if (!["active", "sold"].includes(status)) {
+      return res.status(400).json({ message: "Unsupported product status." });
+    }
+
     await products.updateOne(
       { id: req.params.id, retailerId: req.user.id },
       { $set: { status, updatedAt: now() } },

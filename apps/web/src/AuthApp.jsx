@@ -575,7 +575,12 @@ function AuthApp() {
       setRetailerDashboard(dashboardPayload);
       setStatusMessage({
         type: "success",
-        text: status === "sold" ? "Product moved to history." : "Product status updated.",
+        text:
+          status === "sold"
+            ? "Product moved to history."
+            : status === "active"
+              ? "Product restored to stock."
+              : "Product status updated.",
       });
       return true;
     } catch (error) {

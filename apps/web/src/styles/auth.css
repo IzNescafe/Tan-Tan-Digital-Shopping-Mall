@@ -752,6 +752,11 @@
   margin-top: 14px;
 }
 
+.history-summary-pills {
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
 .post-studio-pill {
   padding: 8px 12px;
   border-radius: 999px;
