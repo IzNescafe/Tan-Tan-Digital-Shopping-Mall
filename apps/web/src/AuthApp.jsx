@@ -107,6 +107,7 @@ function AuthApp() {
   const [pendingTransactionProofOrders, setPendingTransactionProofOrders] = useState([]);
   const [pendingDeliveryProofOrders, setPendingDeliveryProofOrders] = useState([]);
   const [pendingFaceScanRetailers, setPendingFaceScanRetailers] = useState([]);
+  const [pendingReports, setPendingReports] = useState([]);
   const [products, setProducts] = useState(customerDeals);
   const [customerRequests, setCustomerRequests] = useState([]);
   const [customerOrders, setCustomerOrders] = useState([]);
@@ -116,6 +117,7 @@ function AuthApp() {
   const [openRetailerTrackingOrderId, setOpenRetailerTrackingOrderId] = useState("");
   const [openRetailerProofOrderId, setOpenRetailerProofOrderId] = useState("");
   const [retailerDashboard, setRetailerDashboard] = useState(null);
+  const [editingRetailerProduct, setEditingRetailerProduct] = useState(null);
   const [requestForm, setRequestForm] = useState({
     productName: "",
     budgetMMK: "",
@@ -130,13 +132,21 @@ function AuthApp() {
   };
 
   const refreshAdminQueues = async () => {
-    const [retailersPayload, paymentsPayload, transactionProofsPayload, deliveryProofsPayload, faceScansPayload] =
+    const [
+      retailersPayload,
+      paymentsPayload,
+      transactionProofsPayload,
+      deliveryProofsPayload,
+      faceScansPayload,
+      reportsPayload,
+    ] =
       await Promise.all([
         apiRequest("/admin/pending-retailers", { token }),
         apiRequest("/admin/pending-payments", { token }),
         apiRequest("/admin/pending-transaction-proofs", { token }),
         apiRequest("/admin/pending-delivery-proofs", { token }),
         apiRequest("/admin/pending-face-scans", { token }),
+        apiRequest("/admin/pending-reports", { token }),
       ]);
 
     setPendingRetailers(Array.isArray(retailersPayload.retailers) ? retailersPayload.retailers : []);
@@ -146,6 +156,16 @@ function AuthApp() {
     );
     setPendingDeliveryProofOrders(Array.isArray(deliveryProofsPayload.orders) ? deliveryProofsPayload.orders : []);
     setPendingFaceScanRetailers(Array.isArray(faceScansPayload.retailers) ? faceScansPayload.retailers : []);
+    setPendingReports(Array.isArray(reportsPayload.reports) ? reportsPayload.reports : []);
+  };
+
+  const refreshRetailerWorkspace = async () => {
+    const [dashboardPayload] = await Promise.all([
+      apiRequest("/retailer/dashboard", { token }),
+      refreshProductCatalog(),
+    ]);
+    setRetailerDashboard(dashboardPayload);
+    return dashboardPayload;
   };
 
   useEffect(() => {
@@ -319,6 +339,7 @@ function AuthApp() {
       setPendingTransactionProofOrders([]);
       setPendingDeliveryProofOrders([]);
       setPendingFaceScanRetailers([]);
+      setPendingReports([]);
     } else {
       refreshAdminQueues()
         .then(() => {})
@@ -349,6 +370,7 @@ function AuthApp() {
 
     if (!session || session.role !== "retailer") {
       setRetailerDashboard(null);
+      setEditingRetailerProduct(null);
     } else {
       apiRequest("/retailer/dashboard", { token })
         .then((payload) => {
@@ -381,6 +403,27 @@ function AuthApp() {
   const updateForm = (setter) => (event) => {
     const { name, value } = event.target;
     setter((current) => ({ ...current, [name]: value }));
+  };
+
+  const promptForReport = (subjectLabel) => {
+    const details = window.prompt(`Why are you reporting this ${subjectLabel}?`);
+    if (details == null) {
+      return null;
+    }
+
+    const trimmed = details.trim();
+    if (!trimmed) {
+      setStatusMessage({
+        type: "error",
+        text: `Please add a short reason before reporting this ${subjectLabel}.`,
+      });
+      return null;
+    }
+
+    return {
+      reason: `Customer reported this ${subjectLabel}.`,
+      details: trimmed,
+    };
   };
 
   const handleCustomerSignup = async (event) => {
@@ -533,19 +576,68 @@ function AuthApp() {
     setIsSubmitting(true);
 
     try {
-      await apiRequest("/retailer/products", {
-        method: "POST",
+      const isEditing = Boolean(editingRetailerProduct?.id);
+      await apiRequest(isEditing ? `/retailer/products/${editingRetailerProduct.id}` : "/retailer/products", {
+        method: isEditing ? "PATCH" : "POST",
         token,
         body: JSON.stringify(productForm),
       });
-      const [dashboardPayload] = await Promise.all([
-        apiRequest("/retailer/dashboard", { token }),
-        refreshProductCatalog(),
-      ]);
-      setRetailerDashboard(dashboardPayload);
+      await refreshRetailerWorkspace();
+      setEditingRetailerProduct(null);
       setStatusMessage({
         type: "success",
-        text: "Product published successfully.",
+        text: isEditing ? "Product updated successfully." : "Product published successfully.",
+      });
+      return true;
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error.message,
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartEditRetailerProduct = (product) => {
+    if (!product) {
+      return;
+    }
+
+    setEditingRetailerProduct(product);
+    setStatusMessage({
+      type: "success",
+      text: `Editing ${product.title}. Update the fields and save when you are ready.`,
+    });
+    navigateTo("retailer-posts");
+  };
+
+  const handleCancelEditRetailerProduct = () => {
+    setEditingRetailerProduct(null);
+  };
+
+  const handleDeleteRetailerProduct = async (productId) => {
+    const product = retailerDashboard?.inStockProducts?.find((entry) => entry.id === productId) ||
+      retailerDashboard?.soldProducts?.find((entry) => entry.id === productId);
+    const label = product?.title || "this post";
+    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) {
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/retailer/products/${productId}`, {
+        method: "DELETE",
+        token,
+      });
+      if (editingRetailerProduct?.id === productId) {
+        setEditingRetailerProduct(null);
+      }
+      await refreshRetailerWorkspace();
+      setStatusMessage({
+        type: "success",
+        text: "Post deleted successfully.",
       });
       return true;
     } catch (error) {
@@ -581,6 +673,137 @@ function AuthApp() {
             : status === "active"
               ? "Product restored to stock."
               : "Product status updated.",
+      });
+      return true;
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error.message,
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAdminProduct = async (productId) => {
+    if (!productId) {
+      return false;
+    }
+
+    if (!window.confirm("Delete this reported post from the marketplace?")) {
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/admin/products/${productId}`, {
+        method: "DELETE",
+        token,
+      });
+      await Promise.all([refreshAdminQueues(), refreshProductCatalog()]);
+      setStatusMessage({
+        type: "success",
+        text: "Reported post deleted successfully.",
+      });
+      return true;
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error.message,
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResolveAdminReport = async (reportId, resolution = "reviewed") => {
+    if (!reportId) {
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/admin/reports/${reportId}/resolve`, {
+        method: "POST",
+        token,
+        body: JSON.stringify({ resolution }),
+      });
+      await refreshAdminQueues();
+      setStatusMessage({
+        type: "success",
+        text: "Report resolved successfully.",
+      });
+      return true;
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error.message,
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReportProduct = async (product) => {
+    if (!product?.id) {
+      return false;
+    }
+
+    const payload = promptForReport("post");
+    if (!payload) {
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/products/${product.id}/report`, {
+        method: "POST",
+        token,
+        body: JSON.stringify(payload),
+      });
+      setStatusMessage({
+        type: "success",
+        text: "Post report sent to admin review.",
+      });
+      return true;
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error.message,
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReportRetailer = async ({ retailerId, retailerName }) => {
+    if (!retailerId) {
+      setStatusMessage({
+        type: "error",
+        text: "Retailer information is not available yet.",
+      });
+      return false;
+    }
+
+    const payload = promptForReport("retailer");
+    if (!payload) {
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/retailers/${retailerId}/report`, {
+        method: "POST",
+        token,
+        body: JSON.stringify(payload),
+      });
+      setStatusMessage({
+        type: "success",
+        text: `Report sent for ${retailerName || "this retailer"}.`,
       });
       return true;
     } catch (error) {
@@ -1162,6 +1385,9 @@ function AuthApp() {
             selectedProduct={selectedProduct}
             onBackToDashboard={() => navigateTo("dashboard")}
             onAcceptOffer={handleAcceptProductOffer}
+            onReportProduct={handleReportProduct}
+            onReportRetailer={handleReportRetailer}
+            isSubmitting={isSubmitting}
           />
         );
       }
@@ -1180,10 +1406,13 @@ function AuthApp() {
           pendingTransactionProofOrders={pendingTransactionProofOrders}
           pendingDeliveryProofOrders={pendingDeliveryProofOrders}
           pendingFaceScanRetailers={pendingFaceScanRetailers}
+          pendingReports={pendingReports}
           approveRetailer={approveRetailer}
           onConfirmOrderPayment={handleConfirmOrderPayment}
           onReviewAdminProof={handleReviewAdminProof}
           onReviewAdminFaceScan={handleReviewFaceScan}
+          onDeleteAdminProduct={handleDeleteAdminProduct}
+          onResolveAdminReport={handleResolveAdminReport}
           products={products}
           customerRequests={customerRequests}
           customerOrders={customerOrders}
@@ -1219,6 +1448,12 @@ function AuthApp() {
           onReceiptFileChange={handleReceiptFileChange}
           onReceiptNoteChange={handleReceiptNoteChange}
           onSaveProfile={handleSaveProfile}
+          editingRetailerProduct={editingRetailerProduct}
+          onStartEditRetailerProduct={handleStartEditRetailerProduct}
+          onCancelEditRetailerProduct={handleCancelEditRetailerProduct}
+          onDeleteRetailerProduct={handleDeleteRetailerProduct}
+          onReportProduct={handleReportProduct}
+          onReportRetailer={handleReportRetailer}
           isSubmitting={isSubmitting}
         />
       );

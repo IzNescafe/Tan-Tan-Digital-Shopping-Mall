@@ -28,6 +28,7 @@ function CustomerOrderDetailPage({
   onUploadReceipt,
   onCustomerOrderAction,
   onCustomerConfirmDelivered,
+  onReportRetailer,
   onBack,
 }) {
   const handleClosePage = () => {
@@ -265,6 +266,20 @@ function CustomerOrderDetailPage({
                     Confirm delivered
                   </button>
                 ) : null}
+
+                <button
+                  className="secondary-button danger-button"
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() =>
+                    onReportRetailer?.({
+                      retailerId: order.contact?.id,
+                      retailerName: order.contact?.name || order.retailerName,
+                    })
+                  }
+                >
+                  Report retailer
+                </button>
               </div>
 
               {canUploadReceipt && isReceiptOpen ? (

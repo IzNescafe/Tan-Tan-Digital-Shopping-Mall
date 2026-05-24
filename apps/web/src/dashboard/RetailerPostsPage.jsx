@@ -86,7 +86,17 @@ async function createCroppedProductImage(source, cropState) {
   return canvasToDataUrl(canvas);
 }
 
-function RetailerPostsPage({ retailerDashboard, onSubmitRetailerProduct, onBack, statusMessage, isSubmitting }) {
+function RetailerPostsPage({
+  retailerDashboard,
+  onSubmitRetailerProduct,
+  editingProduct,
+  onCancelEditRetailerProduct,
+  onEditRetailerProduct,
+  onDeleteRetailerProduct,
+  onBack,
+  statusMessage,
+  isSubmitting,
+}) {
   const [productForm, setProductForm] = useState(defaultProductForm);
   const [rawImage, setRawImage] = useState("");
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -101,6 +111,7 @@ function RetailerPostsPage({ retailerDashboard, onSubmitRetailerProduct, onBack,
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const recentProducts = retailerDashboard?.inStockProducts || [];
+  const isEditing = Boolean(editingProduct?.id);
   const livePreviewSource = rawImage || productForm.image;
   const livePreviewStyle = rawImage
     ? {
@@ -124,6 +135,30 @@ function RetailerPostsPage({ retailerDashboard, onSubmitRetailerProduct, onBack,
   };
 
   useEffect(() => () => stopCamera(), []);
+
+  useEffect(() => {
+    if (!editingProduct) {
+      setProductForm(defaultProductForm);
+      setRawImage("");
+      resetCrop();
+      return;
+    }
+
+    setProductForm({
+      title: editingProduct.title || "",
+      brand: editingProduct.brand || "",
+      category: editingProduct.category || "",
+      type: editingProduct.type || "",
+      priceMMK: editingProduct.priceMMK || "",
+      originalPriceMMK: editingProduct.originalPriceMMK || "",
+      discount: editingProduct.discount || "",
+      proof: editingProduct.proof || "",
+      description: editingProduct.description || "",
+      image: editingProduct.image || "",
+    });
+    setRawImage("");
+    resetCrop();
+  }, [editingProduct]);
 
   const resetCrop = () => {
     setCropState({
@@ -264,7 +299,7 @@ function RetailerPostsPage({ retailerDashboard, onSubmitRetailerProduct, onBack,
             <div className="customer-section-heading">
               <div>
                 <p className="preview-label">Create post</p>
-                <h3>Upload a clean new product post</h3>
+                <h3>{isEditing ? "Update your active post" : "Upload a clean new product post"}</h3>
               </div>
               <span className="deal-brand">Post Studio</span>
             </div>
@@ -573,8 +608,18 @@ function RetailerPostsPage({ retailerDashboard, onSubmitRetailerProduct, onBack,
                   </article>
 
                   <button className="primary-button retailer-post-submit" type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Uploading..." : "Publish product"}
+                    {isSubmitting ? (isEditing ? "Saving..." : "Uploading...") : isEditing ? "Save changes" : "Publish product"}
                   </button>
+                  {isEditing ? (
+                    <button
+                      className="secondary-button retailer-post-submit"
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => onCancelEditRetailerProduct?.()}
+                    >
+                      Cancel edit
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </form>
@@ -600,6 +645,24 @@ function RetailerPostsPage({ retailerDashboard, onSubmitRetailerProduct, onBack,
                       <div className="price-row">
                         <strong>{product.priceMMK}</strong>
                         <span>{product.originalPriceMMK}</span>
+                      </div>
+                      <div className="deal-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onEditRetailerProduct?.(product)}
+                        >
+                          Edit post
+                        </button>
+                        <button
+                          className="secondary-button danger-button"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onDeleteRetailerProduct?.(product.id)}
+                        >
+                          Delete post
+                        </button>
                       </div>
                     </div>
                   </article>

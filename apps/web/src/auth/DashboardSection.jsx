@@ -8,7 +8,20 @@ function AdminQueueCard({ title, eyebrow, count }) {
   );
 }
 
-function AdminReviewCard({ kicker, title, summary, note, image, imageAlt, actionLabel, onAction }) {
+function AdminReviewCard({
+  kicker,
+  title,
+  summary,
+  note,
+  image,
+  imageAlt,
+  actionLabel,
+  onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+  dangerActionLabel,
+  onDangerAction,
+}) {
   return (
     <article className="approval-card">
       <div className="approval-copy">
@@ -18,9 +31,23 @@ function AdminReviewCard({ kicker, title, summary, note, image, imageAlt, action
         {note ? <p className="panel-text">Note: {note}</p> : null}
         {image ? <img className="approval-receipt-preview" src={image} alt={imageAlt} /> : null}
       </div>
-      <button className="primary-button approval-action" type="button" onClick={onAction}>
-        {actionLabel}
-      </button>
+      <div className="approval-actions">
+        {actionLabel ? (
+          <button className="primary-button approval-action" type="button" onClick={onAction}>
+            {actionLabel}
+          </button>
+        ) : null}
+        {secondaryActionLabel ? (
+          <button className="secondary-button approval-action" type="button" onClick={onSecondaryAction}>
+            {secondaryActionLabel}
+          </button>
+        ) : null}
+        {dangerActionLabel ? (
+          <button className="secondary-button approval-action danger-button" type="button" onClick={onDangerAction}>
+            {dangerActionLabel}
+          </button>
+        ) : null}
+      </div>
     </article>
   );
 }
@@ -47,10 +74,13 @@ function DashboardSection({
   pendingTransactionProofOrders = [],
   pendingDeliveryProofOrders = [],
   pendingFaceScanRetailers = [],
+  pendingReports = [],
   approveRetailer,
   onConfirmOrderPayment,
   onReviewAdminProof,
   onReviewAdminFaceScan,
+  onDeleteAdminProduct,
+  onResolveAdminReport,
 }) {
   const isAdmin = session?.role === "admin";
   const retailerQueue = Array.isArray(pendingRetailers) ? pendingRetailers : [];
@@ -58,6 +88,7 @@ function DashboardSection({
   const transactionProofQueue = Array.isArray(pendingTransactionProofOrders) ? pendingTransactionProofOrders : [];
   const deliveryProofQueue = Array.isArray(pendingDeliveryProofOrders) ? pendingDeliveryProofOrders : [];
   const faceScanQueue = Array.isArray(pendingFaceScanRetailers) ? pendingFaceScanRetailers : [];
+  const reportQueue = Array.isArray(pendingReports) ? pendingReports : [];
 
   const adminQueueStats = [
     {
@@ -89,6 +120,12 @@ function DashboardSection({
       title: "Face scans",
       count: faceScanQueue.length,
       hint: "Retailer identity scans pending review.",
+    },
+    {
+      eyebrow: "Safety",
+      title: "Customer reports",
+      count: reportQueue.length,
+      hint: "Reported posts and retailers waiting for review.",
     },
   ];
 
@@ -193,6 +230,35 @@ function DashboardSection({
           imageAlt={`${retailer.name || retailer.shopName || "Retailer"} face scan`}
           actionLabel="Review face scan"
           onAction={() => onReviewAdminFaceScan(retailer.id)}
+        />
+      ),
+    },
+    {
+      key: "reports",
+      eyebrow: "Safety",
+      title: "Customer reports",
+      emptyTitle: "No open reports",
+      emptyText: "Reported posts and retailers will appear here for admin review.",
+      items: reportQueue,
+      renderItem: (report) => (
+        <AdminReviewCard
+          key={report.id}
+          kicker={report.targetType === "product" ? "Reported post" : "Reported retailer"}
+          title={
+            report.targetType === "product"
+              ? report.productTitle || "Product report"
+              : report.retailerName || "Retailer report"
+          }
+          summary={`Reporter: ${report.reporterName || "Customer"} / Reason: ${report.reason || "Review requested"} / Retailer: ${
+            report.retailerName || "Unknown"
+          }`}
+          note={report.details}
+          image={report.productImage}
+          imageAlt={report.productTitle || "Reported product"}
+          actionLabel="Resolve report"
+          onAction={() => onResolveAdminReport?.(report.id)}
+          dangerActionLabel={report.targetType === "product" ? "Delete post" : ""}
+          onDangerAction={report.targetType === "product" ? () => onDeleteAdminProduct?.(report.productId) : undefined}
         />
       ),
     },

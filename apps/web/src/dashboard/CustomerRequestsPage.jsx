@@ -202,7 +202,7 @@ function CustomerRequestsPage({
       const results = await Promise.all(
         chatTargets.map(async (target) => {
           try {
-            const payload = await apiRequest(`/requests/${target.requestId}/chat`, { token });
+            const payload = await apiRequest(`/requests/${target.requestId}/chat?poll=1`, { token });
             return { target, chats: payload.chats };
           } catch {
             return null;

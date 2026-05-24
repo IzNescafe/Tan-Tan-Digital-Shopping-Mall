@@ -199,7 +199,16 @@ function sanitizeUser(user) {
   };
 }
 
-function buildContactCard(user, fallbackName = "") {
+function sanitizeProfileImage(profileImage, { includeProfileImage = true } = {}) {
+  const image = asString(profileImage);
+  if (!includeProfileImage) {
+    return "";
+  }
+
+  return image;
+}
+
+function buildContactCard(user, fallbackName = "", options = {}) {
   if (!user && !fallbackName) {
     return null;
   }
@@ -212,17 +221,43 @@ function buildContactCard(user, fallbackName = "") {
     city: asString(user?.city),
     township: asString(user?.township),
     address: asString(user?.address),
-    profileImage: asString(user?.profileImage),
+    profileImage: sanitizeProfileImage(user?.profileImage, options),
   };
 }
 
+function buildRetailerProductScope(user) {
+  const retailerId = asString(user?.id);
+  const retailerEmail = asString(user?.email);
+  const retailerShopName = asString(user?.shopName || user?.name);
+  const scope = [];
+
+  if (retailerId) {
+    scope.push({ retailerId });
+    scope.push({ retailerOwnerId: retailerId });
+  }
+  if (retailerEmail) {
+    scope.push({ retailerOwnerEmail: retailerEmail });
+  }
+  if (retailerShopName) {
+    scope.push({ retailerName: retailerShopName });
+    scope.push({ retailer: retailerShopName });
+  }
+
+  return scope;
+}
+
 function buildProduct(product, usersById) {
-  const retailer = usersById.get(asString(product.retailerId));
+  const retailerId = asString(product.retailerId || product.retailerOwnerId);
+  const retailer = usersById.get(retailerId);
   const retailerName =
-    retailer?.shopName || retailer?.name || asString(product.retailerName) || "Retailer";
+    retailer?.shopName ||
+    retailer?.name ||
+    asString(product.retailerName || product.retailer) ||
+    "Retailer";
 
   return {
     id: asString(product.id),
+    retailerId,
     brand: asString(product.brand),
     title: asString(product.title),
     category: asString(product.category),
@@ -236,6 +271,31 @@ function buildProduct(product, usersById) {
     proof: asString(product.proof),
     description: asString(product.description),
     status: asString(product.status || "active"),
+    updatedAt: asString(product.updatedAt || product.createdAt),
+    reportCount: Number(product.reportCount || 0),
+  };
+}
+
+function buildAdminReport(report, usersById, productsById) {
+  const reporter = usersById.get(asString(report.reporterId));
+  const retailer = usersById.get(asString(report.retailerId));
+  const product = productsById.get(asString(report.productId));
+
+  return {
+    id: asString(report.id),
+    targetType: asString(report.targetType || "retailer"),
+    status: asString(report.status || "open"),
+    reason: asString(report.reason || report.details),
+    details: asString(report.details),
+    createdAt: asString(report.createdAt),
+    reporterName: asString(reporter?.name || report.reporterName || "Customer"),
+    reporterEmail: asString(reporter?.email || report.reporterEmail),
+    retailerId: asString(report.retailerId),
+    retailerName: asString(retailer?.shopName || retailer?.name || report.retailerName || "Retailer"),
+    retailerEmail: asString(retailer?.email || report.retailerEmail),
+    productId: asString(report.productId),
+    productTitle: asString(product?.title || report.productTitle || "Product"),
+    productImage: asString(product?.image || report.productImage),
   };
 }
 
@@ -958,6 +1018,7 @@ app.get(
   "/requests/:id/chat",
   requireAuth,
   asyncHandler(async (req, res) => {
+    const includeProfileImage = req.query.poll !== "1";
     const [request, orders, users, chats] = await Promise.all([
       collection("requests").findOne({ id: req.params.id }),
       collection("orders").find({}).toArray(),
@@ -985,11 +1046,13 @@ app.get(
       allowed = asString(request.userId || request.customerId) === req.user.id;
       const retailer =
         usersById.get(asString(request.assignedRetailerId || request.retailerId || order?.retailerId)) || null;
-      contact = buildContactCard(retailer, asString(request.assignedRetailerName) || "Retailer chat");
+      contact = buildContactCard(retailer, asString(request.assignedRetailerName) || "Retailer chat", {
+        includeProfileImage,
+      });
     } else if (req.user.role === "retailer") {
       allowed = canRetailerAccessRequest(request, req.user.id, ordersByRequestId);
       const customer = usersById.get(asString(request.userId || request.customerId || order?.customerId)) || null;
-      contact = buildContactCard(customer, "Customer");
+      contact = buildContactCard(customer, "Customer", { includeProfileImage });
     }
 
     if (!allowed) {
@@ -1145,12 +1208,13 @@ app.get(
   requireAuth,
   requireRole("retailer"),
   asyncHandler(async (req, res) => {
+    const retailerProductScope = buildRetailerProductScope(req.user);
     const [requests, orders, users, products] = await Promise.all([
       collection("requests").find({}).toArray(),
       collection("orders").find({ retailerId: req.user.id }).sort({ createdAt: -1, _id: -1 }).toArray(),
       collection("users").find({}).toArray(),
       collection("products")
-        .find({ retailerId: req.user.id })
+        .find({ $or: retailerProductScope })
         .sort({ createdAt: -1, _id: -1 })
         .toArray(),
     ]);
@@ -1223,12 +1287,77 @@ app.post(
 );
 
 app.patch(
+  "/retailer/products/:id",
+  requireAuth,
+  requireRole("retailer"),
+  asyncHandler(async (req, res) => {
+    const products = collection("products");
+    const retailerProductScope = buildRetailerProductScope(req.user);
+    const product = await products.findOne({ id: req.params.id, $or: retailerProductScope });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    const nextValues = {
+      retailerId: req.user.id,
+      retailerName: req.user.shopName || req.user.name,
+      title: asString(req.body?.title || product.title || "Untitled product"),
+      brand: asString(req.body?.brand || product.brand || "Brand"),
+      category: asString(req.body?.category || product.category || "General"),
+      type: asString(req.body?.type || product.type || "Product"),
+      priceMMK: asString(req.body?.priceMMK || product.priceMMK),
+      originalPriceMMK: asString(req.body?.originalPriceMMK || product.originalPriceMMK),
+      discount: asString(req.body?.discount || product.discount),
+      proof: asString(req.body?.proof || req.body?.proofNote || product.proof || "Proof ready"),
+      description: asString(req.body?.description || product.description),
+      image: asString(req.body?.image || product.image),
+      updatedAt: now(),
+    };
+
+    await products.updateOne({ id: req.params.id, $or: retailerProductScope }, { $set: nextValues });
+    const refreshed = await products.findOne({ id: req.params.id, $or: retailerProductScope });
+    res.json({ product: refreshed });
+  }),
+);
+
+app.delete(
+  "/retailer/products/:id",
+  requireAuth,
+  requireRole("retailer"),
+  asyncHandler(async (req, res) => {
+    const products = collection("products");
+    const reports = collection("reports");
+    const retailerProductScope = buildRetailerProductScope(req.user);
+    const product = await products.findOne({ id: req.params.id, $or: retailerProductScope });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    await products.deleteOne({ id: req.params.id, $or: retailerProductScope });
+    await reports.updateMany(
+      { productId: req.params.id, status: "open" },
+      {
+        $set: {
+          status: "resolved",
+          resolvedAt: now(),
+          resolvedByRole: "retailer",
+          resolvedByName: req.user.shopName || req.user.name,
+          resolution: "product_removed_by_retailer",
+        },
+      },
+    );
+    res.json({ deletedId: req.params.id });
+  }),
+);
+
+app.patch(
   "/retailer/products/:id/status",
   requireAuth,
   requireRole("retailer"),
   asyncHandler(async (req, res) => {
     const products = collection("products");
-    const product = await products.findOne({ id: req.params.id, retailerId: req.user.id });
+    const retailerProductScope = buildRetailerProductScope(req.user);
+    const product = await products.findOne({ id: req.params.id, $or: retailerProductScope });
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
     }
@@ -1239,11 +1368,129 @@ app.patch(
     }
 
     await products.updateOne(
-      { id: req.params.id, retailerId: req.user.id },
-      { $set: { status, updatedAt: now() } },
+      { id: req.params.id, $or: retailerProductScope },
+      {
+        $set: {
+          retailerId: req.user.id,
+          retailerName: req.user.shopName || req.user.name,
+          status,
+          updatedAt: now(),
+        },
+      },
     );
 
-    res.json({ product: { ...product, status } });
+    res.json({
+      product: {
+        ...product,
+        retailerId: req.user.id,
+        retailerName: req.user.shopName || req.user.name,
+        status,
+      },
+    });
+  }),
+);
+
+app.post(
+  "/products/:id/report",
+  requireAuth,
+  requireRole("customer"),
+  asyncHandler(async (req, res) => {
+    const [product, users] = await Promise.all([
+      collection("products").findOne({ id: req.params.id }),
+      collection("users").find({}).toArray(),
+    ]);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    const reports = collection("reports");
+    const reason = asString(req.body?.reason || "Customer reported this post.");
+    const details = asString(req.body?.details || reason);
+    const usersById = new Map(users.map((user) => [asString(user.id), user]));
+    const retailer = usersById.get(asString(product.retailerId));
+    const existingReport = await reports.findOne({
+      reporterId: req.user.id,
+      targetType: "product",
+      productId: product.id,
+      status: "open",
+    });
+
+    if (existingReport) {
+      return res.json({ report: buildAdminReport(existingReport, usersById, new Map([[product.id, product]])) });
+    }
+
+    const report = {
+      id: makeId("report"),
+      reporterId: req.user.id,
+      reporterName: req.user.name,
+      reporterEmail: req.user.email,
+      targetType: "product",
+      productId: product.id,
+      productTitle: product.title,
+      productImage: product.image,
+      retailerId: asString(product.retailerId),
+      retailerName: asString(retailer?.shopName || retailer?.name || product.retailerName),
+      retailerEmail: asString(retailer?.email),
+      reason,
+      details,
+      status: "open",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    await reports.insertOne(report);
+    await collection("products").updateOne(
+      { id: product.id },
+      { $set: { updatedAt: now() }, $inc: { reportCount: 1 } },
+    );
+
+    res.json({ report: buildAdminReport(report, usersById, new Map([[product.id, product]])) });
+  }),
+);
+
+app.post(
+  "/retailers/:id/report",
+  requireAuth,
+  requireRole("customer"),
+  asyncHandler(async (req, res) => {
+    const retailer = await collection("users").findOne({ id: req.params.id, role: "retailer" });
+    if (!retailer) {
+      return res.status(404).json({ message: "Retailer not found." });
+    }
+
+    const reports = collection("reports");
+    const reason = asString(req.body?.reason || "Customer reported this retailer.");
+    const details = asString(req.body?.details || reason);
+    const existingReport = await reports.findOne({
+      reporterId: req.user.id,
+      targetType: "retailer",
+      retailerId: retailer.id,
+      status: "open",
+    });
+
+    if (existingReport) {
+      return res.json({ report: existingReport });
+    }
+
+    const report = {
+      id: makeId("report"),
+      reporterId: req.user.id,
+      reporterName: req.user.name,
+      reporterEmail: req.user.email,
+      targetType: "retailer",
+      retailerId: retailer.id,
+      retailerName: retailer.shopName || retailer.name,
+      retailerEmail: retailer.email,
+      reason,
+      details,
+      status: "open",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    await reports.insertOne(report);
+    res.json({ report });
   }),
 );
 
@@ -1598,6 +1845,22 @@ app.post(
 );
 
 app.get(
+  "/admin/pending-reports",
+  requireAuth,
+  requireRole("admin"),
+  asyncHandler(async (_req, res) => {
+    const [reports, users, products] = await Promise.all([
+      collection("reports").find({ status: "open" }).sort({ createdAt: -1, _id: -1 }).toArray(),
+      collection("users").find({}).toArray(),
+      collection("products").find({}).toArray(),
+    ]);
+    const usersById = new Map(users.map((user) => [asString(user.id), user]));
+    const productsById = new Map(products.map((product) => [asString(product.id), product]));
+    res.json({ reports: reports.map((report) => buildAdminReport(report, usersById, productsById)) });
+  }),
+);
+
+app.get(
   "/admin/pending-retailers",
   requireAuth,
   requireRole("admin"),
@@ -1690,6 +1953,63 @@ app.get(
       .sort({ createdAt: -1, _id: -1 })
       .toArray();
     res.json({ retailers: retailers.map((retailer) => sanitizeUser(retailer)) });
+  }),
+);
+
+app.post(
+  "/admin/reports/:reportId/resolve",
+  requireAuth,
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    const reports = collection("reports");
+    const report = await reports.findOne({ id: req.params.reportId });
+    if (!report) {
+      return res.status(404).json({ message: "Report not found." });
+    }
+
+    const resolution = asString(req.body?.resolution || "reviewed");
+    const updates = {
+      status: "resolved",
+      resolvedAt: now(),
+      resolvedByRole: "admin",
+      resolvedByName: req.user.name || ADMIN_EMAIL,
+      resolution,
+      updatedAt: now(),
+    };
+
+    await reports.updateOne({ id: req.params.reportId }, { $set: updates });
+    res.json({ report: { ...report, ...updates } });
+  }),
+);
+
+app.delete(
+  "/admin/products/:id",
+  requireAuth,
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    const products = collection("products");
+    const reports = collection("reports");
+    const product = await products.findOne({ id: req.params.id });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    await products.deleteOne({ id: req.params.id });
+    await reports.updateMany(
+      { productId: req.params.id, status: "open" },
+      {
+        $set: {
+          status: "resolved",
+          resolvedAt: now(),
+          resolvedByRole: "admin",
+          resolvedByName: req.user.name || ADMIN_EMAIL,
+          resolution: "product_deleted_by_admin",
+          updatedAt: now(),
+        },
+      },
+    );
+
+    res.json({ deletedId: req.params.id });
   }),
 );
 

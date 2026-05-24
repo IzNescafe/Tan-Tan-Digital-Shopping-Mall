@@ -22,7 +22,7 @@ function ItemDetailImage({ product }) {
   );
 }
 
-function ItemDetailPage({ product, session, onBack, onAcceptOffer }) {
+function ItemDetailPage({ product, session, onBack, onAcceptOffer, onReportProduct, onReportRetailer, isSubmitting }) {
   const handleClosePage = () => {
     if (typeof onBack === "function") {
       onBack();
@@ -36,6 +36,17 @@ function ItemDetailPage({ product, session, onBack, onAcceptOffer }) {
     if (typeof onAcceptOffer === "function") {
       onAcceptOffer(product);
     }
+  };
+
+  const handleReportProduct = () => {
+    onReportProduct?.(product);
+  };
+
+  const handleReportRetailer = () => {
+    onReportRetailer?.({
+      retailerId: product?.retailerId,
+      retailerName: product?.retailer,
+    });
   };
 
   if (!product) {
@@ -94,9 +105,17 @@ function ItemDetailPage({ product, session, onBack, onAcceptOffer }) {
 
           <div className="hero-actions">
             {session?.role === "customer" ? (
-              <button className="primary-button" type="button" onClick={handleAcceptOffer}>
-                Accept offer
-              </button>
+              <>
+                <button className="primary-button" type="button" onClick={handleAcceptOffer}>
+                  Accept offer
+                </button>
+                <button className="secondary-button" type="button" disabled={isSubmitting} onClick={handleReportProduct}>
+                  Report post
+                </button>
+                <button className="secondary-button danger-button" type="button" disabled={isSubmitting} onClick={handleReportRetailer}>
+                  Report retailer
+                </button>
+              </>
             ) : null}
           </div>
         </div>
