@@ -31,6 +31,8 @@ function RetailerDashboardPage({
   token,
   retailerDashboard,
   onUpdateRetailerProductStatus,
+  onEditRetailerProduct,
+  onDeleteRetailerProduct,
   onUpdateRetailerOrderStatus,
   onUpdateRetailerTracking,
   onUploadRetailerProof,
@@ -212,7 +214,7 @@ function RetailerDashboardPage({
       const results = await Promise.all(
         chatTargets.map(async (target) => {
           try {
-            const payload = await apiRequest(`/requests/${target.requestId}/chat`, { token });
+            const payload = await apiRequest(`/requests/${target.requestId}/chat?poll=1`, { token });
             return { target, chats: payload.chats };
           } catch {
             return null;
@@ -376,6 +378,22 @@ function RetailerDashboardPage({
                         <span>{product.originalPriceMMK}</span>
                       </div>
                       <div className="deal-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onEditRetailerProduct?.(product)}
+                        >
+                          Edit post
+                        </button>
+                        <button
+                          className="secondary-button danger-button"
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => onDeleteRetailerProduct?.(product.id)}
+                        >
+                          Delete post
+                        </button>
                         <button
                           className="secondary-button"
                           type="button"

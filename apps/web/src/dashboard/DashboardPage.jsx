@@ -16,6 +16,9 @@ function DashboardPage(props) {
         session={props.session}
         onBack={props.onBackToDashboard}
         onAcceptOffer={props.onAcceptOffer}
+        onReportProduct={props.onReportProduct}
+        onReportRetailer={props.onReportRetailer}
+        isSubmitting={props.isSubmitting}
       />
     );
   }
@@ -34,6 +37,7 @@ function DashboardPage(props) {
         onUploadReceipt={props.onUploadCustomerReceipt}
         onCustomerOrderAction={props.onCustomerOrderAction}
         onCustomerConfirmDelivered={props.onCustomerConfirmDelivered}
+        onReportRetailer={props.onReportRetailer}
         onBack={props.onBackToDashboard}
       />
     );
@@ -88,6 +92,10 @@ function DashboardPage(props) {
           session={props.session}
           retailerDashboard={props.retailerDashboard}
           onSubmitRetailerProduct={props.onSubmitRetailerProduct}
+          editingProduct={props.editingRetailerProduct}
+          onCancelEditRetailerProduct={props.onCancelEditRetailerProduct}
+          onEditRetailerProduct={props.onStartEditRetailerProduct}
+          onDeleteRetailerProduct={props.onDeleteRetailerProduct}
           onBack={props.onBackToDashboard}
           statusMessage={props.statusMessage}
           isSubmitting={props.isSubmitting}
@@ -101,6 +109,7 @@ function DashboardPage(props) {
           session={props.session}
           retailerDashboard={props.retailerDashboard}
           onUpdateRetailerProductStatus={props.onUpdateRetailerProductStatus}
+          onDeleteRetailerProduct={props.onDeleteRetailerProduct}
           onBack={props.onBackToDashboard}
           isSubmitting={props.isSubmitting}
         />
@@ -108,25 +117,27 @@ function DashboardPage(props) {
     }
 
     return (
-        <RetailerDashboardPage
-          session={props.session}
-          token={props.token}
-          retailerDashboard={props.retailerDashboard}
-          onUpdateRetailerProductStatus={props.onUpdateRetailerProductStatus}
-          onUpdateRetailerOrderStatus={props.onUpdateRetailerOrderStatus}
-          onUpdateRetailerTracking={props.onUpdateRetailerTracking}
-          onUploadRetailerProof={props.onUploadRetailerProof}
-          onConfirmRetailerOrder={props.onConfirmRetailerOrder}
-          onConfirmOrderPayment={props.onConfirmOrderPayment}
-          retailerOrderForms={props.retailerOrderForms}
-          onRetailerOrderFieldChange={props.onRetailerOrderFieldChange}
-          onRetailerOrderFileChange={props.onRetailerOrderFileChange}
-          onToggleRetailerTracking={props.onToggleRetailerTracking}
-          onToggleRetailerProof={props.onToggleRetailerProof}
-          openRetailerTrackingOrderId={props.openRetailerTrackingOrderId}
-          openRetailerProofOrderId={props.openRetailerProofOrderId}
-          isSubmitting={props.isSubmitting}
-        />
+      <RetailerDashboardPage
+        session={props.session}
+        token={props.token}
+        retailerDashboard={props.retailerDashboard}
+        onUpdateRetailerProductStatus={props.onUpdateRetailerProductStatus}
+        onUpdateRetailerOrderStatus={props.onUpdateRetailerOrderStatus}
+        onUpdateRetailerTracking={props.onUpdateRetailerTracking}
+        onUploadRetailerProof={props.onUploadRetailerProof}
+        onConfirmRetailerOrder={props.onConfirmRetailerOrder}
+        onConfirmOrderPayment={props.onConfirmOrderPayment}
+        onEditRetailerProduct={props.onStartEditRetailerProduct}
+        onDeleteRetailerProduct={props.onDeleteRetailerProduct}
+        retailerOrderForms={props.retailerOrderForms}
+        onRetailerOrderFieldChange={props.onRetailerOrderFieldChange}
+        onRetailerOrderFileChange={props.onRetailerOrderFileChange}
+        onToggleRetailerTracking={props.onToggleRetailerTracking}
+        onToggleRetailerProof={props.onToggleRetailerProof}
+        openRetailerTrackingOrderId={props.openRetailerTrackingOrderId}
+        openRetailerProofOrderId={props.openRetailerProofOrderId}
+        isSubmitting={props.isSubmitting}
+      />
     );
   }
 

@@ -1,4 +1,4 @@
-# secrets
+# Secrets
 apps/api/.env
 apps/web/.env
 apps/web/.env.local
@@ -6,15 +6,14 @@ apps/web/.env.local
 .env.local
 .env.*.local
 
-# dependencies
+# Dependencies
 apps/api/node_modules/
 apps/web/node_modules/
 
-# build output
+# Build output
 apps/web/dist/
 
-# local data / temp files
-apps/api/data/*.json
+# Temp / local artifacts
 docs/tmp/
 *.log
 npm-debug.log*

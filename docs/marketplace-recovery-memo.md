@@ -1,32 +1,37 @@
 # Tan Tan Marketplace Recovery Memo
 
-## 1. Canonical project and current entry points
+## Canonical Project
 
-- Canonical working repo path:
+- Real working repo:
   - `C:\Users\user\OneDrive\Documents\Tan Tan Digital Shopping Mall`
-- Frontend entry:
+- Frontend real entry:
   - `apps/web/src/main.jsx`
 - Real app shell:
   - `apps/web/src/AuthApp.jsx`
-- Global styles that must both be loaded:
-  - `apps/web/src/styles/theme.css`
-  - `apps/web/src/styles/auth.css`
-- Testing/demo file:
+- The testing/demo file is not the real app:
   - `apps/web/src/App.jsx`
-  - This is not the real marketplace app entry. If the wrong page appears, check `main.jsx` first.
 
-## 2. Current backend / database wiring
+If the wrong UI appears, check `main.jsx` first and make sure it still mounts `AuthApp` and imports both CSS files.
 
-- Backend app:
+## Required Frontend Wiring
+
+`apps/web/src/main.jsx` should use:
+
+```jsx
+import AuthApp from "./AuthApp";
+import "./styles/theme.css";
+import "./styles/auth.css";
+```
+
+## Backend / Database
+
+- API server:
   - `apps/api/src/server.js`
-- API package:
-  - `apps/api/package.json`
-- Web package:
-  - `apps/web/package.json`
 - MongoDB:
-  - host: `127.0.0.1:27017`
-  - database: `tan-tan-marketplace`
-- Main collections already used by the app:
+  - `mongodb://127.0.0.1:27017/tan-tan-marketplace`
+- API port:
+  - `4000`
+- Main data lives in MongoDB, especially:
   - `users`
   - `sessions`
   - `products`
@@ -36,7 +41,28 @@
   - `outboxes`
   - `retailermessages`
 
-## 3. Run commands
+## Current Env Expectations
+
+### `apps/web/.env.local`
+
+```env
+VITE_API_URL=/api
+VITE_API_TARGET=http://127.0.0.1:4000
+```
+
+### `apps/api/.env`
+
+Expected keys:
+
+- `MONGODB_URI`
+- `PORT`
+- `MAIL_USER`
+- `MAIL_APP_PASSWORD`
+- `MAIL_FROM`
+
+Do not push real secrets to GitHub.
+
+## Run Commands
 
 ### API
 
@@ -59,32 +85,9 @@ cd "C:\Users\user\OneDrive\Documents\Tan Tan Digital Shopping Mall\apps\web"
 npm run dev:qr
 ```
 
-## 4. Required env expectations
+## Old Flow That Must Stay Intact
 
-### `apps/web/.env.local`
-
-```env
-VITE_API_URL=/api
-VITE_API_TARGET=http://127.0.0.1:4000
-```
-
-### `apps/api/.env`
-
-Required keys:
-
-- `MONGODB_URI`
-- `PORT`
-- `MAIL_USER`
-- `MAIL_APP_PASSWORD`
-- `MAIL_FROM`
-
-Do not commit real secrets to GitHub.
-
-## 5. Old flow to preserve
-
-This is the old version flow that screenshots confirmed:
-
-1. Logged-out users land on the marketplace home page.
+1. Logged-out users open the marketplace home page.
 2. Header feels like:
    - `Home`
    - `Login`
@@ -96,24 +99,28 @@ This is the old version flow that screenshots confirmed:
    - creates account
    - can log in immediately
 5. Retailer apply:
-   - includes payment reference
+   - uses payment reference
    - waits for admin approval
-   - after approval, verification code is emailed
-6. Existing accounts already live in MongoDB and should continue to work.
-7. Post-login flow:
-   - customer, retailer, and admin accounts all go straight to `/dashboard`
-   - `DashboardPage.jsx` chooses the correct customer / retailer / admin view from `session.role`
+   - after approval, email verification code is sent
+6. Existing accounts already in MongoDB must continue to work.
+7. Customer post-login:
+   - returns to customer marketplace flow / home shopping experience
+8. Retailer post-login:
+   - goes to retailer dashboard
+9. Admin post-login:
+   - goes to admin review dashboard
 
-## 6. Important UI files
+## Important Frontend Files
 
-### Auth / home
+### Auth / Home
 
 - `apps/web/src/home/HomePage.jsx`
 - `apps/web/src/auth/AuthFormPanel.jsx`
 - `apps/web/src/auth/constants.js`
 - `apps/web/src/auth/api.js`
+- `apps/web/src/AuthApp.jsx`
 
-### Dashboards
+### Dashboard Pages
 
 - `apps/web/src/dashboard/DashboardPage.jsx`
 - `apps/web/src/dashboard/CustomerDashboardPage.jsx`
@@ -125,165 +132,83 @@ This is the old version flow that screenshots confirmed:
 - `apps/web/src/dashboard/RetailerHistoryPage.jsx`
 - `apps/web/src/dashboard/UserProfilePage.jsx`
 
-### CSS
+### Styles
 
 - `apps/web/src/styles/theme.css`
 - `apps/web/src/styles/auth.css`
 
-## 7. If the app looks wrong, check these first
+## Known UI Areas That Were Sensitive
 
-### If the wrong theme/demo page appears
+- Navbar feel in logged-out and logged-in states
+- Dashboard section gutters and card spacing
+- Retailer dashboard card layout
+- Retailer post studio spacing
+- Customer / retailer chat layout
+- Profile mobile layout
 
-Check `apps/web/src/main.jsx` and make sure it still imports:
+If one screen looks wrong, check whether the issue is:
 
-```jsx
-import AuthApp from "./AuthApp";
-import "./styles/theme.css";
-import "./styles/auth.css";
-```
+- `theme.css` global shell/header spacing
+- `auth.css` dashboard / form / card spacing
+- `AuthApp.jsx` navigation state
 
-### If CSS looks broken or spacing changes unexpectedly
+## Fast Recovery Checklist
 
-1. Hard refresh:
-   - `Ctrl + F5`
-2. Restart web dev server.
-3. Re-check:
-   - `theme.css`
-   - `auth.css`
-4. Make sure dashboard sections still use the same card spacing / gutter feel as the home page.
+If the app breaks again:
 
-### If login stops working
+1. Start MongoDB
+2. Start API on port `4000`
+3. Start Web
+4. Confirm `main.jsx -> AuthApp`
+5. Confirm both `theme.css` and `auth.css` are imported
+6. Confirm `.env.local` still points to `4000`
+7. Check `/health`
+8. Check existing users in MongoDB Compass
+9. Hard refresh browser with `Ctrl + F5`
+
+## If Login Stops Working
 
 Check in this order:
 
-1. MongoDB is running on `127.0.0.1:27017`
+1. MongoDB is running
 2. API server is running on `4000`
-3. Web proxy target still points to `4000`
-4. `/health` returns OK
-5. Existing users are still present in `tan-tan-marketplace.users`
+3. Web proxy target is still `http://127.0.0.1:4000`
+4. `/health` works
+5. `/auth/me` works with token
+6. `users` collection still contains expected accounts
 
-### If npm errors appear
+## If Wrong UI Appears
 
-Make sure commands are run inside the correct folders:
+Most likely causes:
 
-- API commands inside `apps/api`
-- Web commands inside `apps/web`
+- `main.jsx` was changed to mount the wrong component
+- global CSS imports were removed
+- browser is showing old cached assets
 
-## 8. Quick recovery checklist
+Fix order:
 
-If something breaks again:
+1. Check `main.jsx`
+2. Restart web server
+3. `Ctrl + F5`
 
-1. Start MongoDB
-2. Start API
-3. Start Web
-4. Confirm `main.jsx -> AuthApp`
-5. Confirm both CSS files are imported
-6. Confirm `.env.local` still targets port `4000`
-7. Confirm existing users still exist in MongoDB
-8. Hard refresh browser
-9. Re-test:
-   - login
-   - customer home
-   - retailer dashboard
-   - admin dashboard
-
-## 9. Recent fixes to preserve
-
-### Login goes straight to the related dashboard
-
-- File:
-  - `apps/web/src/AuthApp.jsx`
-- Expected behavior:
-  - after `/auth/login` succeeds, call `navigateTo("dashboard")`
-  - do not send customers back to `home`
-- Why:
-  - `DashboardPage.jsx` already renders the correct dashboard by `session.role`
-
-### Header / Orders dropdown overlap fix
-
-- File:
-  - `apps/web/src/styles/theme.css`
-- Expected CSS:
-  - `.site-header` should stay above dashboard content with `z-index: 20`
-  - inside `@media (max-width: 640px)`, `.nav-hover-panel.is-static` should use `min-width: 0`
-- Why:
-  - prevents the Orders dropdown from being painted under dashboard filters/cards
-  - prevents narrow-screen header buttons such as `Logout` from clipping off-screen
-
-### Retailer post form format fix
-
-- File:
-  - `apps/web/src/styles/auth.css`
-- Expected CSS:
-  - `.upload-field input, .upload-field textarea` should both have the app field style
-  - form fields should be a single-column stack about `560px` wide inside the product details card
-  - keep that same single-column width through the `max-width: 1080px` breakpoint
-  - inputs should be compact rounded boxes (`min-height: 44px`, `border-radius: 14px`) with bold text
-  - focused fields should use a clean dark outline instead of the browser default black rectangle
-  - include width, padding, rounded border, themed background, font, placeholder color, and focus state
-  - do not leave the post form fields as browser-default inputs
-- Why:
-  - `RetailerPostsPage.jsx` uses `search-input` on post inputs, but `search-input` only controls width
-  - textarea needs its own matching `.upload-field textarea` styling
-
-### Compact system pass
-
-- Files:
-  - `apps/web/src/styles/theme.css`
-  - `apps/web/src/styles/auth.css`
-- Expected CSS:
-  - use a denser shared shape across the website: smaller radii, lighter shadow, tighter page/header/card spacing
-  - keep buttons around `40px` high on desktop and dashboard inputs around `44px`
-  - keep product cards, dashboard sections, auth panels, retailer post cards, admin cards, and profile cards using similar compact padding
-  - preserve important behavior from earlier fixes: header stays above dashboard content, post form stays single-column, and login routes to `/dashboard`
-- Why:
-  - prevents each page from feeling like a different design system
-  - keeps marketplace pages easier to scan on laptop and mobile screens
-
-### Expanded chat / navbar collapse fix
-
-- File:
-  - `apps/web/src/styles/auth.css`
-- Expected CSS:
-  - when `body.chat-hub-expanded` is active, hide `.site-header`
-  - keep `.chat-hub-panel.is-expanded` as a fixed overlay with `inset: 12px`, `width: auto`, and high `z-index`
-  - set `body.chat-hub-expanded .app-shell { overflow: visible; }`
-  - hide `.chat-launcher-button` while expanded
-  - keep mobile expanded chat as one-column with the conversation list stacked above the chat body
-- Why:
-  - expanded chat should not squeeze or collapse the navbar
-  - chat full-screen mode should be isolated from normal page/header layout
-
-### Validation after each UI fix
-
-Run:
-
-```powershell
-cd "C:\Users\user\OneDrive\Documents\Tan Tan Digital Shopping Mall\apps\web"
-npm run build
-```
-
-The latest confirmed fixes above all passed Vite build.
-
-## 10. GitHub publish checklist
+## GitHub Push Checklist
 
 Before pushing:
 
-1. Review changes:
+1. Check status:
 
 ```powershell
 git status
 ```
 
-2. Make sure these do not get committed:
+2. Make sure these are not committed:
    - `.env`
    - `.env.local`
    - `node_modules`
    - `dist`
-   - local temp files
+   - local logs / temp files
 
-3. Security note:
-   - rotate the Gmail App Password before public push if there is any chance it was exposed outside local machine history
+3. If Gmail App Password or other secrets were ever exposed outside local machine history, rotate them first.
 
 4. Commit:
 
@@ -292,18 +217,18 @@ git add .
 git commit -m "docs: add marketplace recovery memo and repo safety ignores"
 ```
 
-5. Push to GitHub:
+5. Push:
 
 ```powershell
 git push origin main
 ```
 
-## 11. Purpose of this memo
+## Purpose
 
-This file is the shortest path to catch up again after:
+This memo is here so even if the project gets visually or structurally scrambled again, the main app can be restored quickly without re-guessing:
 
-- accidental agent-mode changes
-- CSS regressions
-- wrong entry file wiring
-- broken login / database link
-- repo cleanup before GitHub publish
+- which repo is canonical
+- which file is the real entry point
+- which env values matter
+- which flow is the old correct flow
+- which files control the UI and dashboard behavior
